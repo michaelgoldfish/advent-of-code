@@ -1,0 +1,7 @@
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\bin\Debug\AdventOfCode.exe.config
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\bin\Debug\AdventOfCode.exe
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\bin\Debug\AdventOfCode.pdb
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\obj\Debug\AdventOfCode.csprojResolveAssemblyReference.cache
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\obj\Debug\AdventOfCode.csproj.CoreCompileInputs.cache
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\obj\Debug\AdventOfCode.exe
+P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\obj\Debug\AdventOfCode.pdb

@@ -10,7 +10,7 @@ namespace AdventOfCode
     {
         static void Main(string[] args)     // Functions to test each solution will be called here
         {
-            Day1.outputSolution();    // Solution to the day 1 question. Output should match the example provided with the question. Data input is handled in the respective class
+            Day1.outputSolution();    // Solution to the day 1 question. Data input is handled in the Day1 Class.
         }
     }
 }

@@ -8,9 +8,11 @@ namespace AdventOfCode
 {
     class Program
     {
-        static void Main(string[] args)     // Functions to test each solution will be called here
+        static void Main(string[] args)     // Functions to test each solution are called here. Data input is handled in the respective classes
         {
-            Day1.outputSolution();    // Solution to the day 1 question. Data input is handled in the Day1 Class.
+            Day1.outputSolution();      // Solution to the day 1 question
+
+            Console.ReadLine();         // Keeps the console open to read the output
         }
     }
 }

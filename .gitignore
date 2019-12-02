@@ -1,2 +1,7 @@
 
 *.ide
+
+AdventOfCode/AdventOfCode/obj/Debug/
+AdventOfCode/AdventOfCode/bin/Debug/
+
+AdventOfCode/.vs/AdventOfCode/v15/

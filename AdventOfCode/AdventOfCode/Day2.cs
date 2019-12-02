@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace AdventOfCode
 {
-    /*
-        --- Day 2: 1202 Program Alarm ---
+    /*  --- Day 2: 1202 Program Alarm ---
      
         On the way to your gravity assist around the Moon, your ship computer beeps angrily about a "1202 program alarm".
         On the radio, an Elf is already explaining how to handle the situation: "Don't worry, that's perfectly norma--" The ship computer bursts into flames.
@@ -70,63 +69,124 @@ namespace AdventOfCode
         Answer: 4138658
     */
 
-    class Day2
-    {
-        public static void OutputSolution()
-        {
-            string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day2Input.txt").ReadToEnd();    // Stores text file as a string
-            string[] inputStringArray = inputString.Split(',');     // Splits the input into substrings separated by the ',' delimiter
-            List<int> intcode = new List<int>();                   // Stores the intcode (puzzle input) as a list of integers
+    /*  --- Part Two ---
+     
+        "Good, the new computer seems to be working correctly! Keep it nearby during this mission - you'll probably use it again.
+        Real Intcode computers support many more features than your new one, but we'll let you know what they are as you need them."
 
-            // Take each element from inputStringArray and store it as an integer in the intcode list
-            foreach(string element in inputStringArray)
+        "However, your current priority should be to complete your gravity assist around the Moon.
+        For this mission to succeed, we should settle on some terminology for the parts you've already built."
+
+        Intcode programs are given as a list of integers; these values are used as the initial state for the computer's memory.
+        When you run an Intcode program, make sure to start by initializing memory to the program's values.
+        A position in memory is called an address (for example, the first value in memory is at "address 0").
+
+        Opcodes (like 1, 2, or 99) mark the beginning of an instruction. The values used immediately after an opcode, if any, are called the instruction's parameters.
+        For example, in the instruction 1,2,3,4, 1 is the opcode; 2, 3, and 4 are the parameters. The instruction 99 contains only an opcode and has no parameters.
+
+        The address of the current instruction is called the instruction pointer; it starts at 0.
+        After an instruction finishes, the instruction pointer increases by the number of values in the instruction;
+        until you add more instructions to the computer, this is always 4 (1 opcode + 3 parameters) for the add and multiply instructions.
+        (The halt instruction would increase the instruction pointer by 1, but it halts the program instead.)
+
+        "With terminology out of the way, we're ready to proceed. To complete the gravity assist, you need to determine what pair of inputs produces the output 19690720."
+
+        The inputs should still be provided to the program by replacing the values at addresses 1 and 2, just like before.
+        In this program, the value placed in address 1 is called the noun, and the value placed in address 2 is called the verb.
+        Each of the two input values will be between 0 and 99, inclusive.
+
+        Once the program has halted, its output is available at address 0, also just like before.
+        Each time you try a pair of inputs, make sure you first reset the computer's memory to the values in the program (your puzzle input) 
+        - in other words, don't reuse memory from a previous attempt.
+
+        Find the input noun and verb that cause the program to produce the output 19690720. What is 100 * noun + verb? (For example, if noun=12 and verb=2, the answer would be 1202.)
+        Answer: 7264
+    */
+
+class Day2
+{
+    private static int OutputAtAddressZero(int noun, int verb)   // Returns the output at address zero given the noun (value at address 1) and verb (address at value 2) as input
+    {
+        string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day2Input.txt").ReadToEnd();    // Stores text file as a string
+        string[] inputStringArray = inputString.Split(',');     // Splits the input into substrings separated by the ',' delimiter
+        List<int> intcode = new List<int>();                   // Stores the intcode (puzzle input) as a list of integers
+
+        // Take each element from inputStringArray and store it as an integer in the intcode list
+        foreach(string element in inputStringArray)
+        {
+            intcode.Add(Convert.ToInt32(element));
+        }
+        intcode[1] = noun;  // Value that gets inserted at position 1
+        intcode[2] = verb;  // Value that gets inserted at position 2
+
+        intcode = RunIntcodeProgram(intcode);
+
+        return intcode[0];
+    }
+
+    private static List<int> RunIntcodeProgram(List<int> intcode)    // Takes a list of integers and runs the intcode, returning the list with updated integer values
+    {
+        const int stepCount = 4;    // Step count for opcodes within the list. After the first opcode operation is done, this many places are skipped to find the next opcode
+
+        for(int index = 0; index < intcode.Count; index += stepCount)
+        {
+            int indexValue = (int)intcode[index];
+
+            if (indexValue == 99)   // Opcode for ending the program
             {
-                intcode.Add(Convert.ToInt32(element));
+                return intcode;     // Program has finished
             }
 
-            intcode = RunIntcodeProgram(intcode);
-            Console.WriteLine("Value at position 0 is {0}", intcode[0]);
+            int inputPosition1 = intcode[index + 1];    // Position in the list of the first input
+            int inputPosition2 = intcode[index + 2];    // Position in the list of the second input
+
+            int input1 = intcode[inputPosition1];       // Value of the first input
+            int input2 = intcode[inputPosition2];       // Value of the second input
+
+            int outputPosition = intcode[index + 3];    // Position in the list of the output; where the output is being placed
+            int outputValue = outputPosition;   // Output value to be placed at the output position. If an unexpected opcode is found, the value at outputPoision will remain the same
+
+            if (indexValue == 1)        // Opcode for addition
+            {
+                outputValue = input1 + input2;
+            }
+            else if (indexValue == 2)   //Opcode for multiplication
+            {
+                outputValue = input1 * input2;
+            }
+            else
+            {
+                Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1, 2, and 99.", indexValue, index);
+            }
+
+            intcode[outputPosition] = outputValue;
         }
 
-        public static List<int> RunIntcodeProgram(List<int> intcode)
+        return intcode;
+    }
+
+    public static void OutputSolution()
+    {
+        const int targetValue = 19690720;   // Target output as chosen by the question
+
+        const int nounBottom = 0;   // Lowest input values allowed for the noun and verb
+        const int verbBottom = 0;   
+        const int nounTop = 99;     // Highest input values allowed for the noun and verb
+        const int verbTop = 99;
+
+        for (int noun = nounBottom; noun <= nounTop; noun++)
         {
-            const int stepCount = 4;    // Step count for opcodes within the list. After the first opcode operation is done, this many places are skipped to find the next opcode
-
-            for(int index = 0; index < intcode.Count; index += stepCount)
+            for (int verb = verbBottom; verb <= verbTop; verb++)
             {
-                int indexValue = (int)intcode[index];
-
-                if (indexValue == 99)   // Opcode for ending the program
+                int zeroValue = OutputAtAddressZero(noun, verb);
+                if (zeroValue == targetValue)   // Output matches target value, return 100 * noun + verb as a solution to the puzzle
                 {
-                    return intcode;     // Program has finished
+                    int answer = 100 * noun + verb;
+                    Console.WriteLine("100 * noun + verb = {0}\nNoun = {1}\nVerb = {2}", answer, noun, verb);
+                    return;
                 }
-
-                int inputPosition1 = intcode[index + 1];    // Position in the list of the first input
-                int inputPosition2 = intcode[index + 2];    // Position in the list of the second input
-
-                int input1 = intcode[inputPosition1];       // Value of the first input
-                int input2 = intcode[inputPosition2];       // Value of the second input
-
-                int outputPosition = intcode[index + 3];    // Position in the list of the output; where the output is being placed
-                int outputValue = outputPosition;   // Output value to be placed at the output position. If an unexpected opcode is found, the value at outputPoision will remain the same
-
-                if (indexValue == 1)        // Opcode for addition
-                {
-                    outputValue = input1 + input2;
-                }
-                else if (indexValue == 2)   //Opcode for multiplication
-                {
-                    outputValue = input1 * input2;
-                }
-                else
-                {
-                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1, 2, and 99.", indexValue, index);
-                }
-
-                intcode[outputPosition] = outputValue;
             }
-
-            return intcode;
         }
     }
+}
 }

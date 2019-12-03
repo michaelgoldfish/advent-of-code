@@ -53,8 +53,42 @@ namespace AdventOfCode
         What is the Manhattan distance from the central port to the closest intersection?
         Answer: 207
     */
-     
 
+    /*  --- Part Two ---
+        It turns out that this circuit is very timing-sensitive; you actually need to minimize the signal delay.
+
+        To do this, calculate the number of steps each wire takes to reach each intersection;
+        choose the intersection where the sum of both wires' steps is lowest.
+        If a wire visits a position on the grid multiple times, use the steps value from the first time it visits that position when calculating the total value of a specific intersection.
+
+        The number of steps a wire takes is the total number of grid squares the wire has entered to get to that location, including the intersection being considered.
+        Again consider the example from above:
+
+        ...........
+        .+-----+...
+        .|.....|...
+        .|..+--X-+.
+        .|..|..|.|.
+        .|.-X--+.|.
+        .|..|....|.
+        .|.......|.
+        .o-------+.
+        ...........
+        In the above example,
+        the intersection closest to the central port is reached after 8+5+5+2 = 20 steps by the first wire and 7+6+4+3 = 20 steps by the second wire for a total of 20+20 = 40 steps.
+
+        However, the top-right intersection is better: the first wire takes only 8+5+2 = 15 and the second wire takes only 7+6+2 = 15, a total of 15+15 = 30 steps.
+
+        Here are the best steps for the extra examples from above:
+
+        R75,D30,R83,U83,L12,D49,R71,U7,L72
+        U62,R66,U55,R34,D71,R55,D58,R83 = 610 steps
+        R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51
+        U98,R91,D20,R16,D67,R40,U7,R15,U6,R7 = 410 steps
+
+        What is the fewest combined steps the wires must take to reach an intersection?
+        Answer: 21196
+    */
 
     class Day3
     {
@@ -62,7 +96,8 @@ namespace AdventOfCode
 
         private static List<int[]> ConvertPathToValues(string path)     // Converts path string to a list of individual location values for easier comparison between wires
         {
-            List<int[]> positionList = new List<int[]>();   // Stores every position that the wire has been on
+            List<int[]> positionList = new List<int[]>();   // Stores every position that the wire has been on along with the # of steps to get to that position (3rd value)
+            int stepCount = 0;                              // Stores the number of steps that have been taken
             int[] currentPosition = { origin[0], origin[1] };                 // Keeps track of current position when going through the path
             string[] pathArray = path.Split(',');           // Separates each path in string by the comma delimeter
 
@@ -88,7 +123,8 @@ namespace AdventOfCode
                     for (int n = localStartPosition; n < localStartPosition + distance; n++)
                     {
                         currentPosition[0] += 1;            // Moves position right one unit
-                        positionList.Add(new int[] { currentPosition[0], currentPosition[1] });  // Adds the new position to the list
+                        stepCount++;                        // Increases the step count by one
+                        positionList.Add(new int[] { currentPosition[0], currentPosition[1], stepCount });  // Adds the new position to the list with the step count
                     }
                 }
                 else if (direction.Equals('L'))     // Code to travel left
@@ -96,7 +132,8 @@ namespace AdventOfCode
                     for (int n = localStartPosition; n > localStartPosition - distance; n--)
                     {
                         currentPosition[0] -= 1;            // Moves position left one unit
-                        positionList.Add(new int[] { currentPosition[0], currentPosition[1] });  // Adds the new position to the list
+                        stepCount++;                        // Increases the step count by one
+                        positionList.Add(new int[] { currentPosition[0], currentPosition[1], stepCount });  // Adds the new position to the list with the step count
                     }
                 }
                 else if (direction.Equals('U'))     // Code to travel upward
@@ -104,7 +141,8 @@ namespace AdventOfCode
                     for (int n = localStartPosition; n < localStartPosition + distance; n++)
                     {
                         currentPosition[1] += 1;            // Moves position up one unit
-                        positionList.Add(new int[] { currentPosition[0], currentPosition[1] });  // Adds the new position to the list
+                        stepCount++;                        // Increases the step count by one
+                        positionList.Add(new int[] { currentPosition[0], currentPosition[1], stepCount });  // Adds the new position to the list with the step count
                     }
                 }
                 else if (direction.Equals('D'))     // Code to travel downward
@@ -112,7 +150,8 @@ namespace AdventOfCode
                     for (int n = localStartPosition; n > localStartPosition - distance; n--)
                     {
                         currentPosition[1] -= 1;            // Moves position down one unit
-                        positionList.Add(new int[] { currentPosition[0], currentPosition[1] });  // Adds the new position to the list
+                        stepCount++;                        // Increases the step count by one
+                        positionList.Add(new int[] { currentPosition[0], currentPosition[1], stepCount });  // Adds the new position to the list with the step count
                     }
                 }
                 else
@@ -135,7 +174,10 @@ namespace AdventOfCode
                 {
                     if (wire1[i][0] == wire2[j][0] && wire1[i][1] == wire2[j][1])   // Checks if the two coordinates are equal
                     {
-                        pointsOfIntersection.Add(wire1[i]); // Adds the coordinate to the list (either coordinate can be added since they have the same value)
+                        int[] intersection = { wire1[i][0], wire1[i][1], 0 };      // Gives the coordinate being added the same position as the intersection
+                        intersection[2] = wire1[i][2] + wire2[j][2];            // Stores the total step count between the two wires as a third coordinate value
+
+                        pointsOfIntersection.Add(intersection); // Adds the coordinate to the list with the summed step count
                     }
                 }
             }
@@ -157,6 +199,21 @@ namespace AdventOfCode
             }
 
             return shortestDistance;
+        }
+
+        private static int findShortestStepCount(List<int[]> pointsOfIntersection)                      // Finds the shortest number of steps within the intersection list
+        {
+            int shortestStepCount = pointsOfIntersection[0][2];     // Tracks the shortest step count found. Default value is the step count of the first point of intersection
+
+            for (int i = 1; i < pointsOfIntersection.Count; i++)    // Checks if the current step count is shorter than the current shortest and replaces it if it is
+            {
+                if (pointsOfIntersection[i][2] < shortestStepCount)
+                {
+                    shortestStepCount = pointsOfIntersection[i][2];
+                }
+            }
+
+            return shortestStepCount;
         }
 
         public static void OutputSolution()  
@@ -187,14 +244,13 @@ namespace AdventOfCode
             List<int[]> wire1Values = ConvertPathToValues(wire1Path);   // Converts the input strings into a list of positions that the wires are on
             List<int[]> wire2Values = ConvertPathToValues(wire2Path);
 
-            List<int[]> pointsOfIntersection = findPointsOfIntersection(wire1Values, wire2Values);  // Stores the positions where the wires overlap
+            List<int[]> pointsOfIntersection = findPointsOfIntersection(wire1Values, wire2Values);  // Stores the positions where the wires overlap along with the step counts to reach there
 
-            int shortestManhattan = findShortestMahnattan(pointsOfIntersection, origin);    // Finds the shortest manhattan value to the origin point
-            Console.WriteLine("Manhattan distance of closest intersection is {0}", shortestManhattan);
+            //int shortestManhattan = findShortestMahnattan(pointsOfIntersection, origin);  // Finds the shortest manhattan value to the origin point
+            //Console.WriteLine("Manhattan distance of closest intersection is {0}", shortestManhattan);
 
-            //List<int[]> testList = new List<int[]>();
-            //testList.Add(new int[] { 5, 5 });
-            //int manhattanTest = findShortestMahnattan(testList, origin);
+            int shortestStepCount = findShortestStepCount(pointsOfIntersection);            // Find the shortest step count among the intersections      
+            Console.WriteLine("Fewest combined steps is: {0} steps", shortestStepCount);
         }
     }
 }

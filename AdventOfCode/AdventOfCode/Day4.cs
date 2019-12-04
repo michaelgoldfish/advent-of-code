@@ -25,7 +25,19 @@ namespace AdventOfCode
         How many different passwords within the range given in your puzzle input meet these criteria?
 
         Your puzzle input is 387638-919123.
-        Answer: 
+        Answer: 466
+    */
+
+    /*  --- Part Two ---
+        An Elf just remembered one more important detail: the two adjacent matching digits are not part of a larger group of matching digits.
+
+        Given this additional criterion, but still ignoring the range rule, the following are now true:
+
+        112233 meets these criteria because the digits never decrease and all repeated digits are exactly two digits long.
+        123444 no longer meets the criteria (the repeated 44 is part of a larger group of 444).
+        111122 meets the criteria (even though 1 is repeated more than twice, it still contains a double 22).
+        How many different passwords within the range given in your puzzle input meet all of the criteria?
+        Answer: 292
     */
 
     class Day4
@@ -33,6 +45,7 @@ namespace AdventOfCode
         const int rangeBottom = 387638;     // Bottom range of possible passwords
         const int rangeTop = 919123;        // Top range of possible values
         const int requiredLength = 6;       // Length of password
+
         private static bool FitsCriteria(int password)
         {
             string passwordAsString = password.ToString();
@@ -51,14 +64,20 @@ namespace AdventOfCode
                 return false;
             }
 
-            // Check that two adjacent digits are the same
+            // Check that two adjacent digits are the same and are not part of a larger group of matching digits
             bool hasTwoAdjacent = false;                        // Tracks whether an adjacent match has been found
-            for (int n = 0; n < passwordChars.Length - 1; n++)  // Checks whether digit n and digit n + 1 are matching
+            for (int n = 0; n < passwordChars.Length - 1; n++)  // Goes through each digit of the password except the last
             {
-                if (passwordChars[n] == passwordChars[n + 1])
-                {
-                    hasTwoAdjacent = true;
-                    break;
+                if (passwordChars[n] == passwordChars[n + 1])           //Check that the two digits surrounding the pair are not the same
+                {   
+                    if (n == 0 || passwordChars[n - 1] != passwordChars[n])    // Check that either n is the first digit , or that n - 1 is different from n
+                    {
+                        if (n + 1 == passwordChars.Length - 1 || passwordChars[n + 1] != passwordChars[n + 2])    // Check that either n + 1 is the last digit, or that n + 1 is different from n + 2
+                        {
+                            hasTwoAdjacent = true;
+                            break;
+                        }
+                    }
                 }
             }
             if (!hasTwoAdjacent)                                // Password does not contain two adjacent matching digits

@@ -79,10 +79,53 @@ namespace AdventOfCode
         Answer: 14522484
     */
 
+    /*  --- Part Two ---
+     
+        The air conditioner comes online! Its cold air feels good for a while, but then the TEST alarms start to go off.
+        Since the air conditioner can't vent its heat anywhere but back into the spacecraft, it's actually making the air inside the ship warmer.
+
+        Instead, you'll need to use the TEST to extend the thermal radiators.
+        Fortunately, the diagnostic program (your puzzle input) is already equipped for this. Unfortunately, your Intcode computer is not.
+
+        Your computer is only missing a few opcodes:
+
+        Opcode 5 is jump-if-true: if the first parameter is non-zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
+        Opcode 6 is jump-if-false: if the first parameter is zero, it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
+        Opcode 7 is less than: if the first parameter is less than the second parameter, it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+        Opcode 8 is equals: if the first parameter is equal to the second parameter, it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+        Like all instructions, these instructions need to support parameter modes as described above.
+
+        Normally, after an instruction is finished, the instruction pointer increases by the number of values in that instruction.
+        However, if the instruction modifies the instruction pointer, that value is used and the instruction pointer is not automatically increased.
+
+        For example, here are several programs that take one input, compare it to the value 8, and then produce one output:
+
+        3,9,8,9,10,9,4,9,99,-1,8 - Using position mode, consider whether the input is equal to 8; output 1 (if it is) or 0 (if it is not).
+        3,9,7,9,10,9,4,9,99,-1,8 - Using position mode, consider whether the input is less than 8; output 1 (if it is) or 0 (if it is not).
+        3,3,1108,-1,8,3,4,3,99 - Using immediate mode, consider whether the input is equal to 8; output 1 (if it is) or 0 (if it is not).
+        3,3,1107,-1,8,3,4,3,99 - Using immediate mode, consider whether the input is less than 8; output 1 (if it is) or 0 (if it is not).
+        Here are some jump tests that take an input, then output 0 if the input was zero or 1 if the input was non-zero:
+
+        3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9 (using position mode)
+        3,3,1105,-1,9,1101,0,0,12,4,12,99,1 (using immediate mode)
+        Here's a larger example:
+
+        3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+        1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+        999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99
+        The above example program uses an input instruction to ask for a single number.
+        The program will then output 999 if the input value is below 8, output 1000 if the input value is equal to 8, or output 1001 if the input value is greater than 8.
+
+        This time, when the TEST diagnostic program runs its input instruction to get the ID of the system to test, provide it 5, the ID for the ship's thermal radiator controller.
+        This diagnostic test suite only outputs one number, the diagnostic code.
+
+        What is the diagnostic code for system ID 5?
+        Answer: 4655956
+    */
+
     class Day5
     {
-
-        private static List<int> RunIntcodeProgram(List<int> intcode)    // Takes a list of integers and runs the intcode, returning the list with updated integer values
+        private static void RunIntcodeProgram(List<int> intcode)    // Takes a list of integers and runs the intcode, asking for user input and outputting a diagnostic code
         {
             // Step count changes based on the opcode ran
             int stepCount = 4;    // Step count for opcodes within the list. After the first opcode operation is done, this many places are skipped to find the next opcode
@@ -93,7 +136,7 @@ namespace AdventOfCode
 
                 if (indexValue == 99)   // Opcode for ending the program
                 {
-                    return intcode;     // Program has finished
+                    return;     // Program has finished
                 }
 
                 // Check the parameter modes and opcode within indexValue. Mode 0 = Parameter mode (parameters are addresses), Mode 1 = Immediate mode (parameters are values)
@@ -105,9 +148,8 @@ namespace AdventOfCode
 
                 int input1;                             // Value of the first input
                 int input2;                             // Value of the second input (if applicable)
-                int outputValue = 0;                    // Value of the output address
 
-                if (opcode == 1 || opcode == 2)        // Opcodes for addition & multiplication. Both have three parameters after the opcode
+                if (opcode == 1 || opcode == 2 || opcode == 5 || opcode == 6 || opcode == 7 || opcode == 8)        // Opcodes for addition & multiplication, as well as opcodes 5-8 from part 2
                 {
                     if (mode1 == 0)
                     {
@@ -127,30 +169,81 @@ namespace AdventOfCode
                         input2 = intcode[index + 2];            // Value of parameter 2
                     }
 
-                    //if (mode3 == 0)     // mode3 should always be 0 according to the problem. "Parameters that an instruction writes to will never be in immediate mode."
-                    //{
                     if (opcode == 1)                // Opcode for addition
                     {
-                        outputValue = input1 + input2;
+                        intcode[intcode[index + 3]] = input1 + input2;   // Set the value at the third parameter to the calculated value
+                        stepCount = 4;
                     }
-                    else    // indexValue == 2          // Opcode for multiplication
-                    {
-                        outputValue = input1 * input2;
-                    }
-                    //}
 
-                    intcode[intcode[index + 3]] = outputValue;   // Set the value at the third parameter to the calculated value
-                    stepCount = 4; // Increase the stepcount by 4 to move past the three parameters to the next opcode
+                    else if (opcode == 2)           // Opcode for multiplication
+                    {
+                        intcode[intcode[index + 3]] = input1 * input2;   // Set the value at the third parameter to the calculated value
+                        stepCount = 4;
+                    }
+
+                    else if (opcode == 5)           // Opcode for jump-if-true
+                    {
+                        if (input1 != 0)
+                        {
+                            index = input2;         // Sets the instruction pointer to the value of the second parameter
+                            stepCount = 0;
+                        }
+                        else
+                        {
+                            stepCount = 3;          // Nothing happened, skip to next instruction
+                        }
+                    }
+
+                    else if (opcode == 6)           // Opcode for jump-if-false
+                    {
+                        if (input1 == 0)
+                        {
+                            index = input2;         // Sets the instruction pointer to the value of the second parameter
+                            stepCount = 0;
+                        }
+                        else
+                        {
+                            stepCount = 3;          // Nothing happened, skip to next instruction
+                        }
+                    }
+
+                    else if (opcode == 7)           // Opcode for less than
+                    {
+                        if (input1 < input2)
+                        {
+                            intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
+                        }
+                        else
+                        {
+                            intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
+                        }
+                        stepCount = 4;
+                    }
+
+                    else if (opcode == 8)           // Opcode for equals
+                    {
+                        if (input1 == input2)
+                        {
+                            intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
+                        }
+                        else
+                        {
+                            intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
+                        }
+                        stepCount = 4;
+                    }
                 }
+
                 else if (opcode == 3)   // Opcode for inputting a value
                 {
-                    Console.WriteLine("Please enter the ID of the system to test (it's 1):");
+                    Console.WriteLine("Please enter the ID of the system to test.\n\nEnter 1 for air conditioner unit (part 1)\nEnter 5 for thermal radiator controller (part 2)");
                     string input = Console.ReadLine();
 
                     intcode[intcode[index + 1]] = Convert.ToInt32(input);    // Set the value at the second parameter to the inputted value
 
                     stepCount = 2;
                 }
+
                 else if (opcode == 4)   // Opcode for outputting a value
                 {
                     int output;
@@ -167,14 +260,15 @@ namespace AdventOfCode
 
                     stepCount = 2;
                 }
+
                 else
                 {
-                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1, 2, 3, 4, and 99.", indexValue, index);
-                    return intcode; // End the function as something went wrong.
+                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1-8 and 99.", indexValue, index);
+                    return;     // End the function as something went wrong.
                 }
             }
 
-            return intcode;
+            return;
         }
 
         public static void OutputSolution()

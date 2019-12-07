@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace AdventOfCode
 {
     /*  --- Day 6: Universal Orbit Map ---
+       
         You've landed at the Universal Orbit Map facility on Mercury.
         Because navigation in space often involves transferring between orbits, the orbit maps here are useful for finding efficient routes between, for example, you and Santa.
         You download a map of the local orbits (your puzzle input).
@@ -67,9 +68,62 @@ namespace AdventOfCode
         Answer: 300598
     */
 
+    /*  --- Part Two ---
+       
+        Now, you just need to figure out how many orbital transfers you (YOU) need to take to get to Santa (SAN).
+
+        You start at the object YOU are orbiting; your destination is the object SAN is orbiting.
+        An orbital transfer lets you move from any object to an object orbiting or orbited by that object.
+
+        For example, suppose you have the following map:
+
+        COM)B
+        B)C
+        C)D
+        D)E
+        E)F
+        B)G
+        G)H
+        D)I
+        E)J
+        J)K
+        K)L
+        K)YOU
+        I)SAN
+        Visually, the above map of orbits looks like this:
+
+                                  YOU
+                                 /
+                G - H       J - K - L
+               /           /
+        COM - B - C - D - E - F
+                       \
+                        I - SAN
+
+        In this example, YOU are in orbit around K, and SAN is in orbit around I. To move from K to I, a minimum of 4 orbital transfers are required:
+
+        K to J
+        J to E
+        E to D
+        D to I
+        Afterward, the map of orbits looks like this:
+
+                G - H       J - K - L
+               /           /
+        COM - B - C - D - E - F
+                       \
+                        I - SAN
+                         \
+                          YOU
+
+        What is the minimum number of orbital transfers required to move from the object YOU are orbiting to the object SAN is orbiting?
+        (Between the objects they are orbiting - not between YOU and SAN.)
+        Answer: 520
+    */
+
     class Day6
-    {
-        public static List<OrbitObject> InstantiateList()
+    {   
+        public static List<OrbitObject> InstantiateList()                                                           // Creates the list of objects based on the input file
         {
             List<OrbitObject> objectList = new List<OrbitObject>();     // List of orbiting objects
 
@@ -91,7 +145,6 @@ namespace AdventOfCode
                     orbitedObject = new OrbitObject(orbitedName);
                     objectList.Add(orbitedObject);
                 }
-                else { /* Do nothing, as the orbited object doesn't need to know what it gets orbited by */ }
 
                 if (orbitingObject == null)     // Object that is orbiting is not in the list; instantiate and at it to list with reference to the orbited object
                 {
@@ -103,12 +156,100 @@ namespace AdventOfCode
                     // Add reference to the orbited object
                     orbitingObject.orbiting = orbitedObject;
                 }
+
+                orbitedObject.orbitedBy.Add(orbitingObject);    // Orbited object knows that it's being orbited by the other object
             }
 
             return objectList;
-        }                                 // Creates the list of objects based on the input file
+        }                                 
 
-        private static int CalculateOrbitCountOfObject(OrbitObject orbitObject)
+        private static int OrbitalTransfersBetweenObjects(string startName, string endName, List<OrbitObject> objectList)   // Returns the number of orbital transfers between the objects startName and endName are orbiting
+        {
+            OrbitObject startObject = objectList.FirstOrDefault(o => o.name == startName).orbiting;     // Search starts from the object that startName (YOU) is orbiting
+            if (startObject == null)
+            {
+                Console.WriteLine("Object \"{0}\" not found.", startName);
+                return 0;
+            }
+
+            // Step 1: Search towards children to see if SAN is indirectly orbiting
+            int[] searchOutcome = SearchObjectDownward(startObject, endName, 0);            // 0 is the current stepcount which = 0 at the start
+
+            if (searchOutcome[1] == 1)      // endName was found, return # of transfers
+            {
+                return searchOutcome[0];
+            }
+
+            // Step 2: SAN was not found among the children. Go backwards until a parent is being orbited by multiple objects, then search those paths the same way.
+            OrbitObject currentObject = startObject;
+            int numOfTransfers = 0;
+            do
+            {
+                numOfTransfers++;                           // Went from the current object to its parent object, so increase count by one
+                string previousName = currentObject.name;   // Store name of child object to avoid searching the same branch of nodes again
+                currentObject = currentObject.orbiting;     // Sets current object (child) to the parent object; the object that was being orbited
+
+                if (currentObject.orbitedBy.Count > 1)      // The parent object has more than 1 object orbiting it; a new path to search through
+                {
+                    numOfTransfers++;
+                    foreach (OrbitObject childObj in currentObject.orbitedBy)
+                    {
+                        if (childObj.name != previousName)
+                        {
+                            searchOutcome = SearchObjectDownward(childObj, endName, numOfTransfers);
+                        }
+                    }
+                    if (searchOutcome[1] == 0)
+                    {
+                        numOfTransfers--;       // Remove the extra step added by the foreach above
+                    }
+                }
+            }
+            while (searchOutcome[1] == 0 && currentObject.name != "COM");   // Loop until endName is found (transfers[1] == 1), or until the universal Center of Mass is reached
+
+            return searchOutcome[0];
+        }
+
+        private static int[] SearchObjectDownward(OrbitObject startObject, string endName, int currentTransfers)    // Searches for a specific object through its child objects (objects that are orbiting it)
+        {
+            int[] searchOutcome = { currentTransfers, 0 };         // This variable is used to track the number of transfers as well as whether endName was actually found or not.
+                                                    // First value: # of transfers.         Second Value: 0 = endName not found, 1 = endName found
+
+            // Check if startObject is the object endName is orbiting
+            if (startObject.orbitedBy.Any(o => o.name == endName))
+            {
+                searchOutcome[1] = 1;
+                return searchOutcome;
+            }
+
+            // Search each child to see if SAN is indirectly orbiting
+            searchOutcome[0]++;
+
+            foreach (OrbitObject childObj in startObject.orbitedBy)
+            {
+                if (childObj.orbitedBy.Count == 0)     // obj is not orbited by any objects, path ends
+                {
+                    // Stop forward search of obj
+                }
+                else    // obj is being orbited, search those orbits as well
+                {
+                    foreach (OrbitObject childOfChildObj in childObj.orbitedBy)
+                    {
+                        int[] childSearchOutcome = SearchObjectDownward(childObj, endName, searchOutcome[0]);
+
+                        if (childSearchOutcome[1] == 1)
+                        {
+                            int[] finalOutcome = { childSearchOutcome[0], 1 };
+                            return finalOutcome;
+                        }
+                    }
+                }
+            }
+            // All outcomes led to a dead end
+            return searchOutcome;
+        }
+
+        private static int CalculateOrbitCountOfObject(OrbitObject orbitObject)                                     // Calculates the number of direct and indirect orbits of one object
         {
             int numOfOrbits = 0;
             OrbitObject currentObject = orbitObject;        // Keeps track of which object is being analyzed. Each loop changes currentObject to be the object that was previously being orbited
@@ -120,7 +261,7 @@ namespace AdventOfCode
             }
 
             return numOfOrbits;
-        }           // Calculates the number of direct and indirect orbits of one object
+        }           
 
         private static int CalculateOrbitCountOfList(List<OrbitObject> objectList)
         {
@@ -137,11 +278,19 @@ namespace AdventOfCode
         public static void OutputSolution()
         {
             List<OrbitObject> objectList;
+            string startName = "YOU";
+            string endName = "SAN";
 
             objectList = Day6.InstantiateList();
-            int numOfOrbits = Day6.CalculateOrbitCountOfList(objectList);
 
-            Console.WriteLine("Total number of orbits is: {0}", numOfOrbits);
+            //OrbitObject testObject = objectList.FirstOrDefault(o => o.name == startName);
+            //int[] LtoE = Day6.SearchObjectDownward(testObject, endName, 0);
+
+            //Console.WriteLine("Minimum between {0} and the object {1} is orbiting is: {2}", startName, endName, LtoE[0]);
+
+            int numOfTransfers = Day6.OrbitalTransfersBetweenObjects(startName, endName, objectList);
+
+            Console.WriteLine("The number of orbital transfers between:\n\n- The object {0} is orbiting\n- The object {1} is orbiting\n\nEquals: {2}", startName, endName, numOfTransfers);
         }
     }
 }

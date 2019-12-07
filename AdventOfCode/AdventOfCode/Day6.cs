@@ -283,11 +283,6 @@ namespace AdventOfCode
 
             objectList = Day6.InstantiateList();
 
-            //OrbitObject testObject = objectList.FirstOrDefault(o => o.name == startName);
-            //int[] LtoE = Day6.SearchObjectDownward(testObject, endName, 0);
-
-            //Console.WriteLine("Minimum between {0} and the object {1} is orbiting is: {2}", startName, endName, LtoE[0]);
-
             int numOfTransfers = Day6.OrbitalTransfersBetweenObjects(startName, endName, objectList);
 
             Console.WriteLine("The number of orbital transfers between:\n\n- The object {0} is orbiting\n- The object {1} is orbiting\n\nEquals: {2}", startName, endName, numOfTransfers);

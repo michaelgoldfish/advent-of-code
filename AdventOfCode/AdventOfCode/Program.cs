@@ -13,8 +13,9 @@ namespace AdventOfCode
             //Day1.outputSolution();    // Solution to the day 1 puzzle
             //Day2.OutputSolution();    // Solution to the day 2 puzzle
             //Day3.OutputSolution();    // Solution to the day 3 puzzle
-            //Day4.OutputSolution();      // Solution to the day 4 puzzle
-            Day5.OutputSolution();
+            //Day4.OutputSolution();    // Solution to the day 4 puzzle
+            //Day5.OutputSolution();    // Solution to the day 5 puzzle
+            Day6.OutputSolution();
 
             Console.ReadLine();         // Keeps the console open to read the output
         }

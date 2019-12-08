@@ -106,226 +106,273 @@ namespace AdventOfCode
         53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10
 
         Try every combination of the new phase settings on the amplifier feedback loop. What is the highest signal that can be sent to the thrusters?
-        Answer: 
+        Answer: 14260332
     */
-class Day7
-{
-    private static int RunIntcodeProgram(List<int> intcode, int phaseSetting, int previousOutput)    // Runs the given intcode program, using phaseSetting and previousOutput as its input values
+
+    class Day7
     {
-        // Step count changes based on the opcode ran
-        int stepCount = 4;      // Step count for opcodes within the list. After the first opcode operation is done, this many places are skipped to find the next opcode
-        int outputSignal = -1;  // outputSignal of the intcode program
-
-        int inputCount = 0;     // Tracks the number of inputs the code has asked for (for opcode 3)
-
-        for (int index = 0; index < intcode.Count; index += stepCount)
+        private static Tuple<int, int, List<int>> RunIntcodeProgram(List<int> intcode, int phaseSetting, int previousOutput, int instructionPointer)    // Runs the given intcode program, using phaseSetting and previousOutput as its input values
         {
-            int indexValue = (int)intcode[index];
+            // Returned values: program output, instruction pointer, edited intcode up to where it was returned
 
-            if (indexValue == 99)   // Opcode for ending the program
+            // Step count changes based on the opcode ran
+            int stepCount = 4;      // Step count for opcodes within the list. After the first opcode operation is done, this many places are skipped to find the next opcode
+
+            int inputCount = 0;     // Tracks the number of inputs the code has asked for (for opcode 3)
+
+            for (int index = instructionPointer; index < intcode.Count; index += stepCount)     // Loop starts at instructionPointer instead of 0 to allow saving where in the code the pointer is
             {
-                return outputSignal;     // Program has finished
-            }
+                int indexValue = (int)intcode[index];
 
-            // Check the parameter modes and opcode within indexValue. Mode 0 = Parameter mode (parameters are addresses), Mode 1 = Immediate mode (parameters are values)
-
-            int opcode = indexValue % 100;              // Stores the rightmost two digits
-            int mode1 = (indexValue / 100) % 10;        // Stores the third digit from the right; the hundreds digit
-            int mode2 = (indexValue / 1000) % 10;       // Stores the fourth digit from the right; the thousands digit
-            int mode3 = (indexValue / 10000) % 10;      // Stores the fifth digit from the right; the ten-thousands digit
-
-            int input1;                             // Value of the first input
-            int input2;                             // Value of the second input (if applicable)
-
-            if (opcode == 1 || opcode == 2 || opcode == 5 || opcode == 6 || opcode == 7 || opcode == 8)        // Opcodes for addition & multiplication, as well as opcodes 5-8 from part 2
-            {
-                if (mode1 == 0)
+                if (indexValue == 99)   // Opcode for ending the program
                 {
-                    input1 = intcode[intcode[index + 1]];   // Value at the address of parameter 1
-                }
-                else    // mode1 == 1
-                {
-                    input1 = intcode[index + 1];            // Value of parameter 1
+                    return Tuple.Create(previousOutput, -1, intcode);           // Return output and the current state of the intcode       
                 }
 
-                if (mode2 == 0)
-                {
-                    input2 = intcode[intcode[index + 2]];   // Value at the address of parameter 2
-                }
-                else    // mode2 == 1
-                {
-                    input2 = intcode[index + 2];            // Value of parameter 2
-                }
+                // Check the parameter modes and opcode within indexValue. Mode 0 = Parameter mode (parameters are addresses), Mode 1 = Immediate mode (parameters are values)
 
-                if (opcode == 1)                // Opcode for addition
-                {
-                    intcode[intcode[index + 3]] = input1 + input2;   // Set the value at the third parameter to the calculated value
-                    stepCount = 4;
-                }
+                int opcode = indexValue % 100;              // Stores the rightmost two digits
+                int mode1 = (indexValue / 100) % 10;        // Stores the third digit from the right; the hundreds digit
+                int mode2 = (indexValue / 1000) % 10;       // Stores the fourth digit from the right; the thousands digit
+                int mode3 = (indexValue / 10000) % 10;      // Stores the fifth digit from the right; the ten-thousands digit
 
-                else if (opcode == 2)           // Opcode for multiplication
-                {
-                    intcode[intcode[index + 3]] = input1 * input2;   // Set the value at the third parameter to the calculated value
-                    stepCount = 4;
-                }
+                int input1;                             // Value of the first input
+                int input2;                             // Value of the second input (if applicable)
 
-                else if (opcode == 5)           // Opcode for jump-if-true
+                if (opcode == 1 || opcode == 2 || opcode == 5 || opcode == 6 || opcode == 7 || opcode == 8)        // Opcodes for addition & multiplication, as well as opcodes 5-8 from part 2
                 {
-                    if (input1 != 0)
+                    if (mode1 == 0)
                     {
-                        index = input2;         // Sets the instruction pointer to the value of the second parameter
-                        stepCount = 0;
+                        input1 = intcode[intcode[index + 1]];   // Value at the address of parameter 1
+                    }
+                    else    // mode1 == 1
+                    {
+                        input1 = intcode[index + 1];            // Value of parameter 1
+                    }
+
+                    if (mode2 == 0)
+                    {
+                        input2 = intcode[intcode[index + 2]];   // Value at the address of parameter 2
+                    }
+                    else    // mode2 == 1
+                    {
+                        input2 = intcode[index + 2];            // Value of parameter 2
+                    }
+
+                    if (opcode == 1)                // Opcode for addition
+                    {
+                        intcode[intcode[index + 3]] = input1 + input2;   // Set the value at the third parameter to the calculated value
+                        stepCount = 4;
+                    }
+
+                    else if (opcode == 2)           // Opcode for multiplication
+                    {
+                        intcode[intcode[index + 3]] = input1 * input2;   // Set the value at the third parameter to the calculated value
+                        stepCount = 4;
+                    }
+
+                    else if (opcode == 5)           // Opcode for jump-if-true
+                    {
+                        if (input1 != 0)
+                        {
+                            index = input2;         // Sets the instruction pointer to the value of the second parameter
+                            stepCount = 0;
+                        }
+                        else
+                        {
+                            stepCount = 3;          // Nothing happened, skip to next instruction
+                        }
+                    }
+
+                    else if (opcode == 6)           // Opcode for jump-if-false
+                    {
+                        if (input1 == 0)
+                        {
+                            index = input2;         // Sets the instruction pointer to the value of the second parameter
+                            stepCount = 0;
+                        }
+                        else
+                        {
+                            stepCount = 3;          // Nothing happened, skip to next instruction
+                        }
+                    }
+
+                    else if (opcode == 7)           // Opcode for less than
+                    {
+                        if (input1 < input2)
+                        {
+                            intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
+                        }
+                        else
+                        {
+                            intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
+                        }
+                        stepCount = 4;
+                    }
+
+                    else if (opcode == 8)           // Opcode for equals
+                    {
+                        if (input1 == input2)
+                        {
+                            intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
+                        }
+                        else
+                        {
+                            intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
+                        }
+                        stepCount = 4;
+                    }
+                }
+
+                else if (opcode == 3)   // Opcode for inputting a value. Takes phaseSetting as input first, then previousOutput second
+                {
+                    inputCount++;
+                    int input;
+
+                    if (inputCount == 1 && instructionPointer == 0)     // Only uses phaseSetting as input once for each Amp, even if this function is ran multiple times
+                    {
+                        input = phaseSetting;
                     }
                     else
                     {
-                        stepCount = 3;          // Nothing happened, skip to next instruction
+                        input = previousOutput;
                     }
+
+                    intcode[intcode[index + 1]] = input;    // Set the value at the second parameter to the inputted value
+
+                    stepCount = 2;
                 }
 
-                else if (opcode == 6)           // Opcode for jump-if-false
+                else if (opcode == 4)   // Opcode for outputting a value
                 {
-                    if (input1 == 0)
+                    int output4;
+
+                    if (mode1 == 0)
                     {
-                        index = input2;         // Sets the instruction pointer to the value of the second parameter
-                        stepCount = 0;
+                        output4 = intcode[intcode[index + 1]];
                     }
-                    else
+                    else    // mode1 == 1
                     {
-                        stepCount = 3;          // Nothing happened, skip to next instruction
+                        output4 = intcode[index + 1];
                     }
+
+                    //Increase index by 2, then return
+                    index += 2;
+                    return Tuple.Create(output4, index, intcode);      // Returns the output, the 
                 }
 
-                else if (opcode == 7)           // Opcode for less than
-                {
-                    if (input1 < input2)
-                    {
-                        intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
-                    }
-                    else
-                    {
-                        intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
-                    }
-                    stepCount = 4;
-                }
-
-                else if (opcode == 8)           // Opcode for equals
-                {
-                    if (input1 == input2)
-                    {
-                        intcode[intcode[index + 3]] = 1;    // Set the value at the third parameter to 1
-                    }
-                    else
-                    {
-                        intcode[intcode[index + 3]] = 0;    // Set the value at the third parameter to 1
-                    }
-                    stepCount = 4;
-                }
-            }
-
-            else if (opcode == 3)   // Opcode for inputting a value. Takes phaseSetting as input first, then previousOutput second
-            {
-                inputCount++;
-                int input;
-
-                if (inputCount == 1)
-                {
-                    input = phaseSetting;
-                }
-                else if (inputCount == 2)
-                {
-                    input = previousOutput;
-                }
                 else
                 {
-                    // A third input was requested which is unexpected from day 7's puzzle input
-                    input = -1;
+                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1-8 and 99.", indexValue, index);
                 }
-
-                intcode[intcode[index + 1]] = input;    // Set the value at the second parameter to the inputted value
-
-                stepCount = 2;
             }
 
-            else if (opcode == 4)   // Opcode for outputting a value
-            {
-                int output;
-
-                if (mode1 == 0)
-                {
-                    output = intcode[intcode[index + 1]];
-                }
-                else    // mode1 == 1
-                {
-                    output = intcode[index + 1];
-                }
-                outputSignal = output;
-
-                stepCount = 2;
-            }
-
-            else
-            {
-                Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1-8 and 99.", indexValue, index);
-                return outputSignal;     // End the function as something went wrong.
-            }
+            return Tuple.Create(previousOutput, -80, intcode);           // Should never get ran, as function returns after reaching opcode 4 or 99
         }
 
-        return outputSignal;
-    }
-
-    public static List<int> InitializeIntcodeProgram()          // Initializes the intcode from the input file
-    {
-        string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day7Input.txt").ReadToEnd();    // Stores text file as a string
-        string[] inputStringArray = inputString.Split(',');     // Splits the input into substrings separated by the ',' delimiter
-        List<int> intcode = new List<int>();                   // Stores the intcode (puzzle input) as a list of integers
-
-        // Take each element from inputStringArray and store it as an integer in the intcode list
-        foreach (string element in inputStringArray)
+        public static List<int> InitializeIntcodeProgram()          // Initializes the intcode from the input file
         {
-            intcode.Add(Convert.ToInt32(element));
+            string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day7Input.txt").ReadToEnd();    // Stores text file as a string
+            string[] inputStringArray = inputString.Split(',');     // Splits the input into substrings separated by the ',' delimiter
+            List<int> intcode = new List<int>();                   // Stores the intcode (puzzle input) as a list of integers
+
+            // Take each element from inputStringArray and store it as an integer in the intcode list
+            foreach (string element in inputStringArray)
+            {
+                intcode.Add(Convert.ToInt32(element));
+            }
+
+            return intcode;
         }
 
-        return intcode;
-    }
-
-    public static void OutputSolution()
-    {
-        List<int> intcode = InitializeIntcodeProgram();
-        const int bottom = 0;               // Lowest number in the sequence
-        const int top = 4;                  // Highest number in the sequence
-        int length = top - bottom + 1;      // Length of sequence
-        int inputSignal = 0;
-
-        int highestSignal = 0;              // Tracks the highest signal that has been found
-
-        // Run the intcode program five times given a five-digit phase setting sequence
-        for (int a = bottom; a < length; a++)
+        public static void OutputSolution()
         {
-            for (int b = bottom; b < length; b++)
+            List<int> intcode = InitializeIntcodeProgram();
+            const int bottom = 5;               // Lowest number in the sequence
+            const int top = 9;                  // Highest number in the sequence
+            const int inputSignal = 0;          // First input for A (set outputE to this since A takes it as input)
+
+            int highestSignal = 0;              // Tracks the highest signal that has been found
+
+            //Run the intcode program five times given a five - digit phase setting sequence
+            for (int a = bottom; a <= top; a++)
             {
-                if (b != a)
+                for (int b = bottom; b <= top; b++)
                 {
-                    for (int c = bottom; c < length; c++)
+                    if (b != a)
                     {
-                        if (c != b && c != a)
+                        for (int c = bottom; c <= top; c++)
                         {
-                            for (int d = bottom; d < length; d++)
+                            if (c != b && c != a)
                             {
-                                if (d != c && d != b && d != a)
+                                for (int d = bottom; d <= top; d++)
                                 {
-                                    for (int e = bottom; e < length; e++)
+                                    if (d != c && d != b && d != a)
                                     {
-                                        if (e != d && e != c && e != b && e != a)
+                                        for (int e = bottom; e <= top; e++)
                                         {
-                                            int outputA = RunIntcodeProgram(intcode, a, inputSignal);
-                                            int outputB = RunIntcodeProgram(intcode, b, outputA);
-                                            int outputC = RunIntcodeProgram(intcode, c, outputB);
-                                            int outputD = RunIntcodeProgram(intcode, d, outputC);
-                                            int outputE = RunIntcodeProgram(intcode, e, outputD);
-
-                                            if (outputE > highestSignal)
+                                            if (e != d && e != c && e != b && e != a)
                                             {
-                                                highestSignal = outputE;
+                                                // Loop the amplifiers until amplifier E reaches opcode 99, then compare if the output size is larger
+
+                                                Tuple<int, int, List<int>> tupleA;  // Tuple to store A's output
+                                                int outputA = 0;                    // A's output; input for B
+                                                int pointerA = 0;                   // Instruction Pointer for A
+                                                List<int> intcodeA = new List<int>(intcode);       // intcode for amplifier A
+
+                                                Tuple<int, int, List<int>> tupleB;  // Tuple to store B's output
+                                                int outputB = 0;                    // B's output; input for C
+                                                int pointerB = 0;                   // Instruction Pointer for B
+                                                List<int> intcodeB = new List<int>(intcode);       // intcode for amplifier B
+
+                                                Tuple<int, int, List<int>> tupleC;  // Tuple to store C's output
+                                                int outputC = 0;                    // C's output; input for D
+                                                int pointerC = 0;                   // Instruction Pointer for C
+                                                List<int> intcodeC = new List<int>(intcode);       // intcode for amplifier C
+
+                                                Tuple<int, int, List<int>> tupleD;  // Tuple to store D's output
+                                                int outputD = 0;                    // D's output; input for E
+                                                int pointerD = 0;                   // Instruction Pointer for D
+                                                List<int> intcodeD = new List<int>(intcode);       // intcode for amplifier D
+
+                                                Tuple<int, int, List<int>> tupleE;  // Tuple to store E's output
+                                                int outputE = inputSignal;          // E's output; input for D
+                                                int pointerE = 0;                   // Instruction Pointer for E
+                                                List<int> intcodeE = new List<int>(intcode);       // intcode for amplifier E
+
+                                                do
+                                                {
+                                                    tupleA = RunIntcodeProgram(intcodeA, a, outputE, pointerA);
+                                                    outputA = tupleA.Item1;
+                                                    pointerA = tupleA.Item2;
+                                                    intcodeA = tupleA.Item3;
+
+                                                    tupleB = RunIntcodeProgram(intcodeB, b, outputA, pointerB);
+                                                    outputB = tupleB.Item1;
+                                                    pointerB = tupleB.Item2;
+                                                    intcodeB = tupleB.Item3;
+
+                                                    tupleC = RunIntcodeProgram(intcodeC, c, outputB, pointerC);
+                                                    outputC = tupleC.Item1;
+                                                    pointerC = tupleC.Item2;
+                                                    intcodeC = tupleC.Item3;
+
+                                                    tupleD = RunIntcodeProgram(intcodeD, d, outputC, pointerD);
+                                                    outputD = tupleD.Item1;
+                                                    pointerD = tupleD.Item2;
+                                                    intcodeD = tupleD.Item3;
+
+                                                    tupleE = RunIntcodeProgram(intcodeE, e, outputD, pointerE);
+                                                    outputE = tupleE.Item1;
+                                                    pointerE = tupleE.Item2;
+                                                    intcodeE = tupleE.Item3;
+                                                }
+                                                while (pointerE != -1);
+
+                                                if (outputE > highestSignal)
+                                                {
+                                                    highestSignal = outputE;
+                                                }
                                             }
                                         }
                                     }
@@ -335,9 +382,8 @@ class Day7
                     }
                 }
             }
-        }
 
-        Console.WriteLine("Highest signal is: {0}", highestSignal);
+            Console.WriteLine("Highest signal is: {0}", highestSignal);
+        }
     }
-}
 }

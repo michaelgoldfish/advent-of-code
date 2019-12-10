@@ -18,7 +18,8 @@ namespace AdventOfCode
             //Day6.OutputSolution();
             //Day7.OutputSolution();
             //Day8.OutputSolution();
-            Day9.OutputSolution();
+            //Day9.OutputSolution();
+            Day10.OutputSolution();
 
             Console.ReadLine();         // Keeps the console open to read the output
         }

@@ -58,6 +58,17 @@ namespace AdventOfCode
         Answer: 3280416268
         */
 
+    /*  --- Part Two ---
+     
+        You now have a complete Intcode computer.
+
+        Finally, you can lock on to the Ceres distress signal! You just need to boost your sensors using the BOOST program.
+
+        The program runs in sensor boost mode by providing the input instruction the value 2. Once run, it will boost the sensors automatically, but it might take a few seconds to complete the operation on slower hardware. In sensor boost mode, the program will output a single value: the coordinates of the distress signal.
+
+        Run the BOOST program in sensor boost mode. What are the coordinates of the distress signal?
+        Answer: 
+    */
     class Day9
     {
         private static void RunIntcodeProgram(List<long> intcode)    // Intcode program from day 5, with added relative mode, opcode 9, increased memory and large number support
@@ -86,8 +97,8 @@ namespace AdventOfCode
                 long input1 = 0;                            // Value of the first input
                 long input2 = 0;                            // Value of the second input (if applicable)
                 int outputAddress = 0;                      // Value of the output address (if applicable)
-                
-                // Adjust inputs based on parameter mode (0), immediate mode (1) and relative mode (2)
+
+                // Adjust input1 based on parameter mode (0), immediate mode (1) and relative mode (2)
                 if (mode1 == 0)
                 {
                     int inputAddress = (int)intcode[index + 1];
@@ -130,7 +141,7 @@ namespace AdventOfCode
                 }
 
                 // Set output address based on mode
-                if (opcode == 1 || opcode == 2 || opcode == 7 || opcode == 8)    // 3 is intcode[index + 1] so it's done locally, 4-6 & 9 have no outputAddress
+                if (opcode == 1 || opcode == 2 || opcode == 7 || opcode == 8)    // 3 is intcode[index + 1] so it's done locally, 4-6 have no outputAddress
                 {
                     if (mode3 == 0 || mode3 == 1)
                     {
@@ -247,7 +258,7 @@ namespace AdventOfCode
 
                 else
                 {
-                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1-8 and 99.", indexValue, index);
+                    Console.WriteLine("Opcode {0} has been found at index {1} but does not have an operation designated to it. Known opcodes are 1-9 and 99.", indexValue, index);
                     return;     // End the function as something went wrong.
                 }
             }
@@ -279,6 +290,8 @@ namespace AdventOfCode
             }
 
             RunIntcodeProgram(intcode);
+            // intcode to test 209: 109,1,203,11,209,8,204,1,99,10,0,42,0
+            // Returns the input given if correct. Found on the advent of code subreddit, this was used to diagnose and fix the lack of relative mode in opcode 9
         }
     }
 }

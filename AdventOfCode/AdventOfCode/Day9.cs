@@ -67,7 +67,7 @@ namespace AdventOfCode
         The program runs in sensor boost mode by providing the input instruction the value 2. Once run, it will boost the sensors automatically, but it might take a few seconds to complete the operation on slower hardware. In sensor boost mode, the program will output a single value: the coordinates of the distress signal.
 
         Run the BOOST program in sensor boost mode. What are the coordinates of the distress signal?
-        Answer: 
+        Answer: 80210
     */
     class Day9
     {

@@ -6,6 +6,58 @@ using System.Threading.Tasks;
 
 namespace AdventOfCode
 {
+    /*  --- Day 9: Sensor Boost ---
+       
+        You've just said goodbye to the rebooted rover and left Mars when you receive a faint distress signal coming from the asteroid belt.
+        It must be the Ceres monitoring station!
+
+        In order to lock on to the signal, you'll need to boost your sensors.
+        The Elves send up the latest BOOST program - Basic Operation Of System Test.
+
+        While BOOST (your puzzle input) is capable of boosting your sensors, for tenuous safety reasons,
+        it refuses to do so until the computer it runs on passes some checks to demonstrate it is a complete Intcode computer.
+
+        Your existing Intcode computer is missing one key feature: it needs support for parameters in relative mode.
+
+        Parameters in mode 2, relative mode, behave very similarly to parameters in position mode: the parameter is interpreted as a position.
+        Like position mode, parameters in relative mode can be read from or written to.
+
+        The important difference is that relative mode parameters don't count from address 0.
+        Instead, they count from a value called the relative base. The relative base starts at 0.
+
+        The address a relative mode parameter refers to is itself plus the current relative base.
+        When the relative base is 0, relative mode parameters and position mode parameters with the same value refer to the same address.
+
+        For example, given a relative base of 50, a relative mode parameter of -7 refers to memory address 50 + -7 = 43.
+
+        The relative base is modified with the relative base offset instruction:
+
+        Opcode 9 adjusts the relative base by the value of its only parameter. The relative base increases (or decreases, if the value is negative) by the value of the parameter.
+        For example, if the relative base is 2000, then after the instruction 109,19, the relative base would be 2019.
+        If the next instruction were 204,-34, then the value at address 1985 would be output.
+
+        Your Intcode computer will also need a few other capabilities:
+
+        -The computer's available memory should be much larger than the initial program.
+         Memory beyond the initial program starts with the value 0 and can be read or written like any other memory.
+         (It is invalid to try to access memory at a negative address, though.)
+        -The computer should have support for large numbers. Some instructions near the beginning of the BOOST program will verify this capability.
+
+        Here are some example programs that use these features:
+
+        109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99 takes no input and produces a copy of itself as output.
+        1102,34915192,34915192,7,4,7,99,0 should output a 16-digit number.
+        104,1125899906842624,99 should output the large number in the middle.
+
+        The BOOST program will ask for a single input; run it in test mode by providing it the value 1.
+        It will perform a series of checks on each opcode, output any opcodes (and the associated parameter modes) that seem to be functioning incorrectly,
+        and finally output a BOOST keycode.
+
+        Once your Intcode computer is fully functional, the BOOST program should report no malfunctioning opcodes when run in test mode;
+        it should only output a single value, the BOOST keycode. What BOOST keycode does it produce?
+        Answer: 3280416268
+        */
+
     class Day9
     {
         private static void RunIntcodeProgram(List<long> intcode)    // Intcode program from day 5, with added relative mode, opcode 9, increased memory and large number support
@@ -47,19 +99,22 @@ namespace AdventOfCode
                 {
                     input1 = intcode[index + 1];            // Value of parameter 1
                 }
-                else    // mode1 == 2
+                else    // (mode1 == 2)
                 {
-                    int inputAddress = (int)intcode[index + 1];
+                    int inputAddress = (int)intcode[index + 1] + relativeBase;
                     intcode = ExpandIntcodeMemory(intcode, inputAddress);
 
-                    input1 = intcode[inputAddress + relativeBase];
+                    input1 = intcode[inputAddress];
                 }
 
                 if (opcode == 1 || opcode == 2 || opcode == 5 | opcode == 6 || opcode == 7 || opcode == 8)  // Sets input 2 only for opcodes that use input2
                 {
                     if (mode2 == 0)
                     {
-                        input2 = intcode[(int)intcode[index + 2]];   // Value at the address of parameter 2
+                        int inputAddress = (int)intcode[index + 2];
+                        intcode = ExpandIntcodeMemory(intcode, inputAddress);
+
+                        input2 = intcode[inputAddress];   // Value at the address of parameter 2
                     }
                     else if (mode2 == 1)
                     {
@@ -67,15 +122,29 @@ namespace AdventOfCode
                     }
                     else    //(mode2 == 2)
                     {
-                        input2 = intcode[(int)intcode[index + 1] + relativeBase];
+                        int inputAddress = (int)intcode[index + 2] + relativeBase;
+                        intcode = ExpandIntcodeMemory(intcode, inputAddress);
+
+                        input2 = intcode[inputAddress];
                     }
+                }
+
+                // Set output address based on mode
+                if (opcode == 1 || opcode == 2 || opcode == 7 || opcode == 8)    // 3 is intcode[index + 1] so it's done locally, 4-6 & 9 have no outputAddress
+                {
+                    if (mode3 == 0 || mode3 == 1)
+                    {
+                        outputAddress = (int)intcode[index + 3];
+                    }
+                    else    // (mode3 == 2)
+                    {
+                        outputAddress = (int)intcode[index + 3] + relativeBase;
+                    }
+                    intcode = ExpandIntcodeMemory(intcode, outputAddress);
                 }
 
                 if (opcode == 1)                // Opcode for addition
                 {
-                    outputAddress = (int)intcode[index + 3];
-                    intcode = ExpandIntcodeMemory(intcode, outputAddress);
-
                     intcode[outputAddress] = input1 + input2;   // Set the value at the third parameter to the calculated value
 
                     stepCount = 4;
@@ -83,8 +152,6 @@ namespace AdventOfCode
 
                 else if (opcode == 2)           // Opcode for multiplication
                 {
-                    outputAddress = (int)intcode[index + 3];
-                    intcode = ExpandIntcodeMemory(intcode, outputAddress);
 
                     intcode[outputAddress] = input1 * input2;   // Set the value at the third parameter to the calculated value
 
@@ -93,10 +160,18 @@ namespace AdventOfCode
 
                 else if (opcode == 3)   // Opcode for inputting a value
                 {
-                    Console.WriteLine("Please enter the ID of the mode to run. For test mode type 1.");
+                    Console.WriteLine("Please enter an ID. For test mode type 1.");
                     string input = Console.ReadLine();
 
-                    outputAddress = (int)intcode[index + 1];
+                    if (mode1 == 0 || mode1 == 1)
+                    {
+                        outputAddress = (int)intcode[index + 1];
+                    }
+                    else    // (mode1 == 2)
+                    {
+                        outputAddress = (int)intcode[index + 1] + relativeBase;
+                    }
+
                     intcode = ExpandIntcodeMemory(intcode, outputAddress);
 
                     intcode[outputAddress] = Convert.ToInt64(input);    // Set the value at the second parameter to the inputted value
@@ -139,9 +214,6 @@ namespace AdventOfCode
 
                 else if (opcode == 7)           // Opcode for less than
                 {
-                    outputAddress = (int)intcode[index + 3];
-                    intcode = ExpandIntcodeMemory(intcode, outputAddress);
-
                     if (input1 < input2)
                     {
                         intcode[outputAddress] = 1;    // Set the value at the third parameter to 1
@@ -155,9 +227,6 @@ namespace AdventOfCode
 
                 else if (opcode == 8)           // Opcode for equals
                 {
-                    outputAddress = (int)intcode[index + 3];
-                    intcode = ExpandIntcodeMemory(intcode, outputAddress);
-
                     if (input1 == input2)
                     {
                         intcode[outputAddress] = 1;    // Set the value at the third parameter to 1
@@ -171,7 +240,7 @@ namespace AdventOfCode
 
                 else if (opcode == 9)
                 {
-                    relativeBase += (int)intcode[index + 1];
+                    relativeBase += (int)input1;
 
                     stepCount = 2;
                 }
@@ -197,11 +266,11 @@ namespace AdventOfCode
             return intcode;
         }
 
-        public static void OutputSolution()     //*********************************************USING TEST INPUT**************************************
+        public static void OutputSolution()
         {
-            string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day9Test.txt").ReadToEnd();    // Stores text file as a string
+            string inputString = new System.IO.StreamReader(@"P:\Michael\Documents\GitHub\advent-of-code\AdventOfCode\AdventOfCode\Day9Input.txt").ReadToEnd();    // Stores text file as a string
             string[] inputStringArray = inputString.Split(',');     // Splits the input into substrings separated by the ',' delimiter
-            List<long> intcode = new List<long>();                   // Stores the intcode (puzzle input) as a list of integers
+            List<long> intcode = new List<long>();                  // Stores the intcode (puzzle input) as a list of integers
 
             // Take each element from inputStringArray and store it as an integer in the intcode list
             foreach (string element in inputStringArray)

@@ -397,14 +397,31 @@ namespace AdventOfCode
             Console.WriteLine("The highest number of asteroids seen is {0} at position [{1},{2}]", mostAsteroidsSeen, mostAsteroidsPosition[0], mostAsteroidsPosition[1]);
         }
 
-        private static int[] VaporizedAt(int[,] map, int[] laser, int n)   // Returns the location of the nth asteroid to get vaporized
+        private static int[] VaporizedAt(int[,] map, int laserX, int laserY, int n)   // Returns the location of the nth asteroid to get vaporized
         {
-            int[] asteroidPosition = new int[2];
+            int[] asteroidPosition = new int[2];                    // Asteroid position to be returned
+            List<Asteroid> asteroidList = new List<Asteroid>();     // Stores the asteroids as Asteroid objects in a list
+            int vaporizeCounter = 0;                                // Tracks how many asteroids have been vaporized
 
-            //TODO vaporize asteroids clockwise
+            // Create a list of asteroid objects
+            for (int y = 0; y < map.GetLength(1); y++)
+            {
+                for (int x = 0; x < map.GetLength(0); x++)
+                {
+                    Asteroid asteroid = new Asteroid(x, y, laserX, laserY);
+                    asteroidList.Add(asteroid);
+                }
+            }
 
-            // Possible idea: compare the asteroid's positions as fractions in order to figure out which ones get reached first.
-            // Then on a tie do the same as part 1 to figure out which asteroid gets vaporized first. Maybe save the non-vaporized in a separate list to be looped through once the laser is pointing straight up again
+            // Reorder the list from lowest angle to highest
+
+            // Loop through the asteroid list and destroy each asteroid in order
+
+                // When vaporizing an asteroid, check if another asteroid is in front if it
+                // If there is, vaporize the asteroid in front and ignore this one until the next pass
+
+
+
 
             return asteroidPosition;
         }
@@ -412,13 +429,14 @@ namespace AdventOfCode
         public static void OutputSolution()     // Laser position = [8,16]
         {
             int[,] map = InstantiateMap();
-            int[] laser = { 8, 16 };
+            const int laserX = 8;
+            const int laserY = 16;
             const int asteroidBet = 200;
 
-            int[] asteroidPos = VaporizedAt(map, laser, asteroidBet);
+            int[] asteroidPos = VaporizedAt(map, laserX, laserY, asteroidBet);
             int math = asteroidPos[0] * 100 + asteroidPos[1];
 
-            Console.WriteLine("Arbitrary math solution: {0}", math);
+            Console.WriteLine("100x + y equals: {0}", math);
         }
     }
 }
